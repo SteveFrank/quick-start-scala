@@ -9,7 +9,6 @@ import java.sql.DriverManager
 object SparkSQLThriftServerApp {
 
   def main(args: Array[String]): Unit = {
-
     Class.forName("org.apache.hive.jdbc.HiveDriver")
 
     val conn  = DriverManager.getConnection("jdbc:hive2://hadoop001:14000","hadoop","")
