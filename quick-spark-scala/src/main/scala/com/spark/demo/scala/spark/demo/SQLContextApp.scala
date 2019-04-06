@@ -1,7 +1,4 @@
-package com.spark.demo.scala.spark
-
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkConf, SparkContext}
+package com.spark.demo.scala.spark.demo
 
 /**
   * @author yangqian

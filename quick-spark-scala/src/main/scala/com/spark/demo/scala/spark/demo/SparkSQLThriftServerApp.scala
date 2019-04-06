@@ -1,4 +1,4 @@
-package com.spark.demo.scala.spark
+package com.spark.demo.scala.spark.demo
 
 import java.sql.DriverManager
 
