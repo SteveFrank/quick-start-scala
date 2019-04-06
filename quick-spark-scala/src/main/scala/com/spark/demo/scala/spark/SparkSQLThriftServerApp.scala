@@ -19,6 +19,11 @@ object SparkSQLThriftServerApp {
       println("empno : " + rs.getInt("empno"))
     }
 
+    rs.close()
+    pstmt.close()
+    conn.close()
+
+
   }
 
 }
