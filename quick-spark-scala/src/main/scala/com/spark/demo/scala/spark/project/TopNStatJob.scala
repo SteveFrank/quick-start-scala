@@ -1,6 +1,7 @@
 package com.spark.demo.scala.spark.project
 
-import com.spark.demo.scala.spark.dao.{DayVideoAccessStat, StatDao}
+import com.spark.demo.scala.spark.dao.{DayCityVideoAccessStat, DayVideoAccessStat, DayVideoTrafficsStat, StatDao}
+import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -28,6 +29,10 @@ object TopNStatJob {
     try {
       // 最受欢迎的课程信息
       videoAccessTopNStat(spark, accessDF)
+      // 按照地市级进行统计TopN课程
+      cityAccessTopNStat(spark, accessDF, day = "20170511")
+      //按照流量进行统计
+      videoTrafficsTopNStat(spark, accessDF, day = "20170511")
     } catch {
       case e: Exception => e.printStackTrace()
     }
@@ -35,15 +40,96 @@ object TopNStatJob {
   }
 
   /**
+    * 按照流量进行统计
+    */
+  def videoTrafficsTopNStat(spark: SparkSession, accessDF:DataFrame, day:String): Unit = {
+    import spark.implicits._
+
+    val cityAccessTopNDF = accessDF.filter($"day" === day && $"cmsType" === "video")
+      .groupBy("day","cmsId").agg(sum("traffic").as("traffics"))
+      .orderBy($"traffics".desc)
+    //.show(false)
+
+    /**
+      * 将统计结果写入到MySQL中
+      */
+    try {
+      cityAccessTopNDF.foreachPartition(partitionOfRecords => {
+        val list = new ListBuffer[DayVideoTrafficsStat]
+
+        partitionOfRecords.foreach(info => {
+          val day = info.getAs[String]("day")
+          val cmsId = info.getAs[Long]("cmsId")
+          val traffics = info.getAs[Long]("traffics")
+          list.append(DayVideoTrafficsStat(day, cmsId,traffics))
+        })
+
+        StatDao.insertDayVideoTrafficsAccessTopN(list)
+      })
+    } catch {
+      case e:Exception => e.printStackTrace()
+    }
+
+  }
+
+  /**
+    * 按照地市进行统计TopN课程
+    */
+  def cityAccessTopNStat(spark: SparkSession, accessDF:DataFrame, day:String): Unit = {
+    import spark.implicits._
+
+    val cityAccessTopNDF = accessDF.filter($"day" === day && $"cmsType" === "video")
+      .groupBy("day", "city", "cmsId")
+      .agg(count("cmsId").as("times"))
+
+    //cityAccessTopNDF.show(false)
+
+    //Window函数在Spark SQL的使用
+
+    val top3DF = cityAccessTopNDF.select(
+      cityAccessTopNDF("day"),
+      cityAccessTopNDF("city"),
+      cityAccessTopNDF("cmsId"),
+      cityAccessTopNDF("times"),
+      row_number().over(Window.partitionBy(cityAccessTopNDF("city"))
+        .orderBy(cityAccessTopNDF("times").desc)
+      ).as("times_rank")
+    ).filter("times_rank <=3") //.show(false)  //Top3
+
+    /**
+      * 将统计结果写入到MySQL中
+      */
+    try {
+      top3DF.foreachPartition(partitionOfRecords => {
+        val list = new ListBuffer[DayCityVideoAccessStat]
+
+        partitionOfRecords.foreach(info => {
+          val day = info.getAs[String]("day")
+          val cmsId = info.getAs[Long]("cmsId")
+          val city = info.getAs[String]("city")
+          val times = info.getAs[Long]("times")
+          val timesRank = info.getAs[Int]("times_rank")
+          list.append(DayCityVideoAccessStat(day, cmsId, city, times, timesRank))
+        })
+
+        StatDao.insertDayCityVideoAccessTopN(list)
+      })
+    } catch {
+      case e:Exception => e.printStackTrace()
+    }
+
+  }
+
+  /**
     * 最受欢迎的TopN课程
     * @param spark
     * @param accessDF
     */
-  def videoAccessTopNStat(spark: SparkSession, accessDF: DataFrame): Unit = {
+  def videoAccessTopNStat(spark: SparkSession, accessDF: DataFrame, day: String): Unit = {
     // 隐式转换
 //    import spark.implicits._
 //    val videoAccessTopNDF = accessDF
-//      .filter($"day" === "20170511" && $"cmsType" === "video")
+//      .filter($"day" === day && $"cmsType" === "video")
 //      .groupBy("day", "cmsId")
 //      .agg(count("cmsId").as("times"))
 //      .orderBy($"times".desc)
@@ -53,7 +139,7 @@ object TopNStatJob {
     accessDF.createOrReplaceTempView("access_logs")
     val videoAccessTopNDF = spark.sql(
       "select day, cmsId, count(1) as times from access_logs " +
-      "where day = '20170511' and cmsType = 'video' " +
+      "where day = '" + day + "' and cmsType = 'video' " +
       "group by day, cmsId order by times desc")
     videoAccessTopNDF.show(false)
 
