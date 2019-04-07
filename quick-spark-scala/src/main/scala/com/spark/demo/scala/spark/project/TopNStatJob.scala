@@ -28,7 +28,7 @@ object TopNStatJob {
 
     try {
       // 最受欢迎的课程信息
-      videoAccessTopNStat(spark, accessDF)
+      videoAccessTopNStat(spark, accessDF, day = "20170511")
       // 按照地市级进行统计TopN课程
       cityAccessTopNStat(spark, accessDF, day = "20170511")
       //按照流量进行统计
