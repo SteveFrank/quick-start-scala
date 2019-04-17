@@ -4,7 +4,7 @@
 		module="quick-start-scala$sources"
 		revision="0.1"
 		status="integration"
-		publication="20190404105250"
+		publication="20190417113656"
 	/>
 	<configurations>
 		<conf name="compile" visibility="public" description=""/>

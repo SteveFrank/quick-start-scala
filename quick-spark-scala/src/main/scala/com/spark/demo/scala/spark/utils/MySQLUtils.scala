@@ -10,7 +10,7 @@ object MySQLUtils {
 
   def getConnections(): Connection = {
     DriverManager
-      .getConnection("jdbc:mysql://hadoop001:3306/imooc_project?user=root&password=root")
+      .getConnection("jdbc:mysql://slave01:3306/imooc_project?user=root&password=root")
   }
 
   def release(connection: Connection, pstmt: PreparedStatement): Unit = {
