@@ -20,13 +20,18 @@ class ActorWordCountClient(host: String, port: Int) extends Actor {
   }
 
   override def receive: Receive = {
-    case StartTask => println("ActorWordCountClient start")
+    case StartTask =>
+      println("ActorWordCountClient start")
+
     case filename: String =>
       val path = serverActorRef.pathString
       println(s"server path : $path")
       serverActorRef ! SubmitTask(filename)
       println(s"ActorWordCountClient send filename to server : $filename")
-    case ResultTask(map) => println(s"receive result Map:$map")
+
+    case ResultTask(map) =>
+      println(s"receive result Map:$map")
+
     case _ =>
       println("nothing receive from server")
   }

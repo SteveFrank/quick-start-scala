@@ -1,6 +1,5 @@
 package com.spark.demo.scala.spark_rdd.demo02
 
-import com.spark.demo.scala.spark.utils.MySQLUtils
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**

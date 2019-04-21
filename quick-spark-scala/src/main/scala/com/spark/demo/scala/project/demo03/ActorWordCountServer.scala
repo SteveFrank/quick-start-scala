@@ -13,7 +13,8 @@ import scala.io.Source
 
 class ActorWordCountServer extends Actor {
   override def receive: Receive = {
-    case StartTask => println("ActorWordCountServer Start")
+    case StartTask =>
+      println("ActorWordCountServer Start")
     case SubmitTask(filename) =>
       println(s"receive filename from client : $filename")
       val connect = Source.fromFile(filename)
